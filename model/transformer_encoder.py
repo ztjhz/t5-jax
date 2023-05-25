@@ -20,34 +20,40 @@ def fwd_transformer_encoder(
 
     ff_0 = ff_block["DenseReluDense"]["wi"]
     ff_1 = ff_block["DenseReluDense"]["wo"]
-    final_layer_norm = ff_block["layer_norm"]
+    ff_layer_norm = ff_block["layer_norm"]
 
     if dropout_key is not None:
         subkeys = random.split(dropout_key, 3)
 
+    # Pre layer norm
+    normed_qry_states = fwd_layer_norm(self_attn_layer_norm, qry_states)
+
     # Multi-head attention
-    x = fwd_attention(self_attn, qry_states, qry_states, mask)
+    x = fwd_attention(self_attn, normed_qry_states, normed_qry_states, mask)
 
     # Dropout
     if dropout_key is not None:
         x = dropout(subkeys[0], x)
 
-    # Add & Norm
+    # Add
     x = x + qry_states
-    x = fwd_layer_norm(self_attn_layer_norm, x)
 
     # Feed Forward (Linear -> Gelu -> Dropout -> Linear -> Dropout)
     _x = x
+
+    # Pre layer norm
+    x = fwd_layer_norm(ff_layer_norm, x)
+
+    # DenseReluDense
     x = fwd_linear(ff_0, x)
-    x = nn.gelu(x)
+    x = nn.relu(x)
     if dropout_key is not None:
         x = dropout(subkeys[1], x)
     x = fwd_linear(ff_1, x)
     if dropout_key is not None:
         x = dropout(subkeys[2], x)
 
-    # Add & Norm
+    # Add
     x = x + _x
-    x = fwd_layer_norm(final_layer_norm, x)
 
     return x
