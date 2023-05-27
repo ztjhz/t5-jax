@@ -6,7 +6,7 @@ from typing import Dict
 # Layer normalization: https://arxiv.org/abs/1607.06450
 def fwd_layer_norm(params: Dict,
                    x: jnp.ndarray,
-                   eps: float = 1e-5) -> jnp.ndarray:
+                   eps: float = 1e-6) -> jnp.ndarray:
     weight = params['weight']
     bias = params.get('bias', None)
 
