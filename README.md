@@ -1,6 +1,8 @@
-# mm-cot-jax
+# JAX Implementation of T5
 
-- [mm-cot-jax](#mm-cot-jax)
+This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.10683.pdf) model.
+
+- [JAX Implementation of T5](#jax-implementation-of-t5)
   - [Setup Instructions](#setup-instructions)
   - [Analysis](#analysis)
     - [1. Jax precision](#1-jax-precision)
