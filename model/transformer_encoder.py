@@ -1,18 +1,41 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import jax.numpy as jnp
 from jax import random
-import jax.nn as nn
+import jax.nn as jnn
 
-from ..model.attention import fwd_attention
-from ..model.layer_norm import fwd_layer_norm
-from ..model.dropout import dropout
-from ..model.linear import fwd_linear
+from .attention import fwd_attention
+from .layer_norm import fwd_layer_norm_rms
+from .dropout import dropout
+from .linear import fwd_linear
 
 
 def fwd_transformer_encoder(
-    params: Dict, qry_states: List[float], mask: List[bool], dropout_key: List = None
-):
+    params: Dict,
+    qry_states: jnp.ndarray,
+    mask: jnp.ndarray,
+    dropout_key: List = None,
+    position_bias: jnp.ndarray = None,
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """
+    Function implementing a forward pass through a Transformer encoder.
+
+    Args:
+        params (Dict): Parameters dictionary for transformer encoder
+
+        qry_states (jnp.ndarray[float]): Query states to be passed to the self-attention module.
+
+        mask (jnp.ndarray[bool]): Boolean mask for input sequence. `True` for valid positions, and `False` for positions to be masked.
+
+        dropout_key (List, optional): A key to use for dropout. Default is `None`, which means no dropout is applied.
+
+        position_bias (jnp.ndarray[float], optional): Precomputed position bias for relative positional encoding. If `None` (1st layer), it will be calculated inside fwd_attention.
+
+    Returns:
+        output_states (jnp.ndarray[float])
+
+        position_bias (jnp.ndarray[float])
+    """
     self_attn_block, ff_block = params["0"], params["1"]
 
     self_attn = self_attn_block["SelfAttention"]
@@ -26,10 +49,12 @@ def fwd_transformer_encoder(
         subkeys = random.split(dropout_key, 3)
 
     # Pre layer norm
-    normed_qry_states = fwd_layer_norm(self_attn_layer_norm, qry_states)
+    normed_qry_states = fwd_layer_norm_rms(self_attn_layer_norm, qry_states)
 
-    # Multi-head attention
-    x = fwd_attention(self_attn, normed_qry_states, normed_qry_states, mask)
+    # Multi-head attention with relative attention bias (relative position representations)
+    x, position_bias = fwd_attention(
+        self_attn, normed_qry_states, normed_qry_states, mask, position_bias
+    )
 
     # Dropout
     if dropout_key is not None:
@@ -42,11 +67,11 @@ def fwd_transformer_encoder(
     _x = x
 
     # Pre layer norm
-    x = fwd_layer_norm(ff_layer_norm, x)
+    x = fwd_layer_norm_rms(ff_layer_norm, x)
 
     # DenseReluDense
     x = fwd_linear(ff_0, x)
-    x = nn.relu(x)
+    x = jnn.relu(x)
     if dropout_key is not None:
         x = dropout(subkeys[1], x)
     x = fwd_linear(ff_1, x)
@@ -56,4 +81,4 @@ def fwd_transformer_encoder(
     # Add
     x = x + _x
 
-    return x
+    return x, position_bias
