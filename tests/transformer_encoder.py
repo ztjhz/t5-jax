@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration
 
 from ..model.transformer_encoder import fwd_transformer_encoder
-from ..model.layer_norm import fwd_layer_norm
+from ..model.layer_norm import fwd_layer_norm_rms
 from ..model.embedding import fwd_embedding
 
 tokenizer = AutoTokenizer.from_pretrained("t5-base")
@@ -27,12 +27,16 @@ x = fwd_embedding(model.params["shared"], input_ids)
 
 assert jnp.allclose(x, output_flax["hidden_states"][0]) == True
 
+position_bias = None
+
 for i in range(12):
     params = model.params["encoder"]["block"][str(i)]["layer"]
-    x = fwd_transformer_encoder(params, x, mask)
-
+    x, position_bias = fwd_transformer_encoder(
+        params, x, mask, position_bias=position_bias
+    )
+    print(i)
     assert jnp.allclose(x, output_flax["hidden_states"][i + 1]) == True
 
-output = fwd_layer_norm(model.params["encoder"]["final_layer_norm"], x)
 
+output = fwd_layer_norm_rms(model.params["encoder"]["final_layer_norm"], x)
 assert jnp.allclose(output_flax["last_hidden_state"], output)
