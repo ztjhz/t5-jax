@@ -22,7 +22,9 @@ def fwd_layer_norm(params: Dict, x: jnp.ndarray, eps: float = 1e-6) -> jnp.ndarr
 # Does not subtract mean and does not have bias
 def fwd_layer_norm_rms(params: Dict, x: jnp.ndarray, eps: float = 1e-6) -> jnp.ndarray:
     weight = params["weight"]
-    var = x.var(-1, keepdims=True)
-    y = x / jnp.sqrt(var + eps) * weight
+    x_square = x**2
+    x_mean_square = x_square.mean(axis=-1, keepdims=True)
+    x_root_mean_square = jnp.sqrt(x_mean_square + eps)
+    y = x / x_root_mean_square * weight
 
     return y

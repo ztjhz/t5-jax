@@ -124,6 +124,15 @@ Where:
 
 > The T5 paper did not mention the omission of mean subtraction.
 
+Root mean Square Layer Normalization Formula:
+
 $$
-y = \gamma \frac{x}{\sqrt{\sigma^2 + \epsilon}}
+\bar{a_i}=\frac{a_i}{RMS(a)}g_i\textrm{, where }RMS(a)=\sqrt{\frac{1}{n}\sum_{i=1}^{n}a_i^2}
 $$
+
+Where:
+
+- $g_i$ is the gain (weight) parameter
+- $a_i$ is the inputs
+- $\bar{a_i}$ is the scaled values of the inputs
+- $RMS(a)$ is the root mean square $a$.
