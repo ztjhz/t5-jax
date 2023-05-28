@@ -1,17 +1,23 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import jax.nn as jnn
 import jax.numpy as jnp
 
 from ..utils.attention_utils import split_projection_to_heads
+from .relative_attention_bias import fwd_relative_attention_bias
 
 
 # model.params['encoder']['block']['1']['layer']['0']['SelfAttention']['q']['kernel']
 # model.params['encoder']['block']['0']['layer']['0']['SelfAttention']['relative_attention_bias']['embedding'].shape
 # layer 0 has relative_attention_bias https://github.com/huggingface/transformers/blob/main/src/transformers/models/t5/modeling_flax_t5.py#L225
 def fwd_attention(
-    params: Dict, qry_states: List[float], tgt_states: List[float], mask: List[bool]
-) -> List[float]:
+    params: Dict,
+    qry_states: List[float],
+    tgt_states: List[float],
+    mask: List[bool],
+    position_bias: jnp.ndarray = None,
+    scale: bool = False,
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
     Perform forward attention computation.
 
@@ -24,8 +30,14 @@ def fwd_attention(
 
         mask (List[bool]): The attention mask tensor with shape (batch_size, 1, query_sequence_length, target_sequence_length).
 
+        position_bias (jnp.ndarray[Float], optional): The relative position bias (relative position embeddings) tensor with shape (batch size, n_heads, query_sequence_length, target_sequence_length).
+        If none (first layer), it will be computed inside this function.
+
+        scale (bool, optional). Whether to scale the qk matrix  by d_k. Defaults to False.
     Returns:
-        List[float]: The computed attention scores as a list of floats.
+        attention_output (jnp.ndarray[Float]): The computed attention scores as a tensor of floats with shape (batch_size, query_sequence_length, d_out)
+
+        position_bias (jnp.ndarray[Float]): The relative position bias (relative position embeddings) tensor with shape (batch size, n_heads, query_sequence_length, target_sequence_length)
     """
     n_head = 12
     out = params["o"]
@@ -40,6 +52,18 @@ def fwd_attention(
 
     d_k = q_proj["kernel"].shape[-1]
 
+    # Relative attention bias (position embeddings)
+    # Compute only for first layer
+    if position_bias is None:
+        query_sequence_length = qry_states.shape[1]
+        target_sequence_length = tgt_states.shape[1]
+        # (batch size, n_heads, query_sequence_length, target_sequence_length)
+        position_bias = fwd_relative_attention_bias(
+            params["relative_attention_bias"],
+            query_sequence_length,
+            target_sequence_length,
+        )
+
     # 1. Linear layer
     # (batch_size, query_sequence_length, n_heads, d_k)
     q = jnp.einsum("bqm,mhk->bqhk", qry_states, q_proj["kernel"])
@@ -48,21 +72,20 @@ def fwd_attention(
     # (batch_size, target_sequence_length, n_heads, d_v)
     v = jnp.einsum("btm,mhv->bthv", tgt_states, v_proj["kernel"])
 
-    if "bias" in q_proj:
-        q += q_proj["bias"]
-        k += k_proj["bias"]
-        v += v_proj["bias"]
-
     # QK matrix multiplication
     # (batch_size, n_heads, query_sequence_length, target_sequence_length)
     qk = jnp.einsum("bqhk,bthk->bhqt", q, k)
-    # Scale
-    qk = qk / jnp.sqrt(d_k)
+    # Scale (scaling not done)
+    if scale:
+        qk = qk / jnp.sqrt(d_k)
+    # Relative position attention bias
+    qk += position_bias
     # Mask
     qk = jnp.where(mask, qk, jnp.NINF)
     # SoftMax
     qk = jnn.softmax(qk)
     qk = jnp.where(mask, qk, 0)
+
     # QKV matrix multiplication
     # (n_heads, d_k, batch_size, query_sequence_length)
     qkv = jnp.einsum("bhqt,bthv->hvbq", qk, v)
@@ -77,4 +100,4 @@ def fwd_attention(
     if "bias" in out:
         output += out["bias"]
 
-    return output
+    return output, position_bias
