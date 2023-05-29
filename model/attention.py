@@ -3,8 +3,8 @@ from typing import Dict, List, Tuple
 import jax.nn as jnn
 import jax.numpy as jnp
 
-from ..utils.attention_utils import split_projection_to_heads
-from .relative_attention_bias import fwd_relative_attention_bias
+from utils.attention_utils import split_projection_to_heads
+from model.relative_attention_bias import fwd_relative_attention_bias
 
 
 # model.params['encoder']['block']['1']['layer']['0']['SelfAttention']['q']['kernel']

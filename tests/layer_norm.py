@@ -1,5 +1,5 @@
 import flax.linen
-from ..model.layer_norm import fwd_layer_norm
+from model.layer_norm import fwd_layer_norm
 
 from jax import random
 import jax.numpy as jnp

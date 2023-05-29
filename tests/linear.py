@@ -2,7 +2,7 @@ import flax.linen
 import jax.numpy as jnp
 from jax import random
 
-from ..model.linear import fwd_linear
+from model.linear import fwd_linear
 
 # set up random keys
 seed = 2418

@@ -4,10 +4,10 @@ import jax.numpy as jnp
 from jax import random
 import jax.nn as jnn
 
-from .attention import fwd_attention
-from .layer_norm import fwd_layer_norm_rms
-from .dropout import dropout
-from .linear import fwd_linear
+from model.attention import fwd_attention
+from model.layer_norm import fwd_layer_norm_rms
+from model.dropout import dropout
+from model.linear import fwd_linear
 
 
 def fwd_transformer_encoder(

@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration
-from ..model.embedding import fwd_embedding
+from model.embedding import fwd_embedding
 
 
 tokenizer = AutoTokenizer.from_pretrained("t5-base")

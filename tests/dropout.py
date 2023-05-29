@@ -1,7 +1,7 @@
 from jax import random
 import jax.numpy as jnp
 
-from ..model.dropout import dropout
+from model.dropout import dropout
 
 seed = 2418
 

@@ -2,9 +2,9 @@ import jax.numpy as jnp
 
 from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration
 
-from ..model.transformer_encoder import fwd_transformer_encoder
-from ..model.layer_norm import fwd_layer_norm_rms
-from ..model.embedding import fwd_embedding
+from model.transformer_encoder import fwd_transformer_encoder
+from model.layer_norm import fwd_layer_norm_rms
+from model.embedding import fwd_embedding
 
 tokenizer = AutoTokenizer.from_pretrained("t5-base")
 model = FlaxT5ForConditionalGeneration.from_pretrained("allenai/unifiedqa-t5-base")

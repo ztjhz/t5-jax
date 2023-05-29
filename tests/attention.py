@@ -2,8 +2,8 @@ import flax.linen
 import jax.numpy as jnp
 from jax import random
 
-from ..model.attention import fwd_attention
-from ..utils.attention_utils import split_projection_to_heads
+from model.attention import fwd_attention
+from utils.attention_utils import split_projection_to_heads
 
 # set up random keys
 seed = 2418
