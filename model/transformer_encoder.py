@@ -1,13 +1,14 @@
 from typing import Dict, List, Tuple
 
+import jax.nn as jnn
 import jax.numpy as jnp
 from jax import random
-import jax.nn as jnn
 
 from model.attention import fwd_attention
-from model.layer_norm import fwd_layer_norm_rms
 from model.dropout import dropout
+from model.layer_norm import fwd_layer_norm_rms
 from model.linear import fwd_linear
+from model.relative_attention_bias import fwd_relative_attention_bias
 
 
 def fwd_transformer_encoder(
@@ -51,8 +52,20 @@ def fwd_transformer_encoder(
     # Pre layer norm
     normed_qry_states = fwd_layer_norm_rms(self_attn_layer_norm, qry_states)
 
+    # relative attention bias (relative position representation)
+    # only compute for the first layer
+    if position_bias is None:
+        query_sequence_length = normed_qry_states.shape[1]
+        target_sequence_length = query_sequence_length
+        # (batch_size, n_head, query_sequence_length, target_sequence_length)
+        position_bias = fwd_relative_attention_bias(
+            self_attn["relative_attention_bias"],
+            query_sequence_length,
+            target_sequence_length,
+        )
+
     # Multi-head attention with relative attention bias (relative position representations)
-    x, position_bias = fwd_attention(
+    x = fwd_attention(
         self_attn, normed_qry_states, normed_qry_states, mask, position_bias
     )
 
@@ -63,7 +76,7 @@ def fwd_transformer_encoder(
     # Add
     x = x + qry_states
 
-    # Feed Forward (Linear -> Gelu -> Dropout -> Linear -> Dropout)
+    # Feed Forward (Linear -> Relu -> Dropout -> Linear -> Dropout)
     _x = x
 
     # Pre layer norm
