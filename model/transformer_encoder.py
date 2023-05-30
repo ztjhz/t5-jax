@@ -30,7 +30,7 @@ def fwd_transformer_encoder(
 
         dropout_key (List, optional): A key to use for dropout. Default is `None`, which means no dropout is applied.
 
-        position_bias (jnp.ndarray[float], optional): Precomputed position bias for relative positional encoding. If `None` (1st layer), it will be calculated inside fwd_attention.
+        position_bias (jnp.ndarray[float], optional): Precomputed position bias for relative positional encoding. If `None` (1st layer), it will be calculated inside this function.
 
     Returns:
         output_states (jnp.ndarray[float])
