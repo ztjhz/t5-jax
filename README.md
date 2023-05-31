@@ -11,6 +11,8 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
     - [4. Scaling QK matrices](#4-scaling-qk-matrices)
     - [5. Relative Attention Bias / Relative Position Bias](#5-relative-attention-bias--relative-position-bias)
     - [6. Layer norm in T5 does not subtract mean](#6-layer-norm-in-t5-does-not-subtract-mean)
+    - [7. T5 employs a final layer norm on the output of the encoder and decoder](#7-t5-employs-a-final-layer-norm-on-the-output-of-the-encoder-and-decoder)
+    - [8. T5 uses tied word embeddings](#8-t5-uses-tied-word-embeddings)
 
 ## Setup Instructions
 
@@ -138,3 +140,17 @@ Where:
 - $a_i$ is the inputs
 - $\bar{a_i}$ is the scaled values of the inputs
 - $RMS(a)$ is the root mean square $a$.
+
+### 7. T5 employs a final layer norm on the output of the encoder and decoder
+
+In the original transformer model proposed by Vaswani et al., 2017, there is no final layer normalization on the outputs of the encoder and decoder. The outputs of these components are fed directly into subsequent operations.
+
+In the T5 model, there is a final layer normalization step after the output from both the encoder and decoder.
+
+### 8. T5 uses tied word embeddings
+
+T5 uses `tied word embeddings`, which is layered upon the output of the final decoder. This differs from the conventional Transformer architecture, which uses a linear layer for the language model head (`lm_head`).
+
+However, for T5 during training, the `lm_head` is the transpose of the word embedding. This reduces the number of trainable parameters in the model by sharing the same embeddings for the input and output layers. This not only decreases the computational load, but also helps in regularizing the model, leading to an improved generalization ability and potentially better performance on unseen data.
+
+> The output of the final decoder block is fed into a dense layer with a softmax output, whose weights are shared with the input embedding matrix.
