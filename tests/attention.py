@@ -43,7 +43,6 @@ params = {
     "v": {"kernel": v_kernel, "bias": v_bias},
     "o": {"kernel": out_kernel, "bias": out_bias},
 }
-split_projection_to_heads({"kernel": out_kernel}, n_head)
 
 params_flax = {
     "params": {
@@ -61,7 +60,7 @@ params_flax = {
 }
 
 # my output
-output = fwd_attention(params, qry_states, tgt_states, mask)
+output = fwd_attention(params, qry_states, tgt_states, mask, scale=True)
 
 # flax attention output
 model = flax.linen.MultiHeadDotProductAttention(
@@ -69,6 +68,7 @@ model = flax.linen.MultiHeadDotProductAttention(
     qkv_features=d_k * n_head,
     out_features=d_out,
     broadcast_dropout=False,
+    use_bias=False,
 )
 
 output_flax = model.apply(params_flax, qry_states, tgt_states, mask=mask)
