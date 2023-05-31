@@ -13,6 +13,7 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
     - [6. Layer norm in T5 does not subtract mean](#6-layer-norm-in-t5-does-not-subtract-mean)
     - [7. T5 employs a final layer norm on the output of the encoder and decoder](#7-t5-employs-a-final-layer-norm-on-the-output-of-the-encoder-and-decoder)
     - [8. T5 uses tied word embeddings](#8-t5-uses-tied-word-embeddings)
+    - [9. T5 also rescales the decoder output for tied word embedding in the language model head](#9-t5-also-rescales-the-decoder-output-for-tied-word-embedding-in-the-language-model-head)
 
 ## Setup Instructions
 
@@ -154,3 +155,25 @@ T5 uses `tied word embeddings`, which is layered upon the output of the final de
 However, for T5 during training, the `lm_head` is the transpose of the word embedding. This reduces the number of trainable parameters in the model by sharing the same embeddings for the input and output layers. This not only decreases the computational load, but also helps in regularizing the model, leading to an improved generalization ability and potentially better performance on unseen data.
 
 > The output of the final decoder block is fed into a dense layer with a softmax output, whose weights are shared with the input embedding matrix.
+
+### 9. T5 also rescales the decoder output for tied word embedding in the language model head
+
+> The rescaling of decoder output before passing it into the lm_head is not mentioned in the T5 paper
+
+However, their [T5](https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/transformer/transformer.py#L586) implementation scales the decoder output.
+
+$$
+\operatorname{lm\_head}(x) = \frac{x}{\sqrt{d_{\text{model}}}}W_e \textrm{\,\,\,\,instead of\,\,\,\,} \operatorname{lm\_head}(x) = xW_e
+$$
+
+$$
+y = \text{Softmax}(\text{lm\_head}(x))
+$$
+
+Where:
+
+- $x$ is the decoder output.
+- $y$ is the logits.
+- $d_{\text{model}}$ is the dimensionality of the model.
+- $W_e$ is the input embeddings used for tie word embeddings.
+- $\operatorname{lm\_head}$ is the input embeddings used for tie word embeddings.
