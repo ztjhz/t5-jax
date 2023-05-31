@@ -5,7 +5,7 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
 - [JAX Implementation of T5](#jax-implementation-of-t5)
   - [Setup Instructions](#setup-instructions)
   - [Analysis](#analysis)
-    - [1. Jax precision](#1-jax-precision)
+    - [1. Jax precision on TPU is low by default](#1-jax-precision-on-tpu-is-low-by-default)
     - [2. Layer normalisation](#2-layer-normalisation)
     - [3. Dropout](#3-dropout)
     - [4. Scaling QK matrices](#4-scaling-qk-matrices)
@@ -27,9 +27,9 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
 
 ## Analysis
 
-### 1. Jax precision
+### 1. Jax precision on TPU is low by default
 
-By default, the precision in jax is `float32`, which is not the highest.
+By default, jax uses `bfloat16` on TPU, even when the data type is float32.
 
 ### 2. Layer normalisation
 
@@ -124,7 +124,7 @@ Where:
 
 [HuggingFace T5 Layer Norm](https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/t5/modeling_flax_t5.py#L71) does not subtract the mean ($\mu$) and does not have a bias ($\beta$). They utilise [Root Mean Square Layer Normalization](https://arxiv.org/abs/1910.07467).
 
-> The T5 paper did not mention the omission of mean subtraction.
+> The T5 paper did not mention that they used Root Mean Square Layer Normalization
 
 Root mean Square Layer Normalization Formula:
 
