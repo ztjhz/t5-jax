@@ -2,10 +2,10 @@ import jax.numpy as jnp
 
 from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration
 from model.embedding import fwd_embedding
-from model.transformer_decoder import fwd_transformer_decoder
+from model.transformer_decoder_block import fwd_transformer_decoder_block
 from model.layer_norm import fwd_layer_norm_rms
 
-from tests.transformer_encoder import (
+from tests.transformer_encoder_block import (
     output_flax as encoder_output_flax,
     output as encoder_output,
 )
@@ -54,7 +54,7 @@ position_bias = None
 
 for i in range(12):
     params = model.params["decoder"]["block"][str(i)]["layer"]
-    x, position_bias = fwd_transformer_decoder(
+    x, position_bias = fwd_transformer_decoder_block(
         params=params,
         qry_states=x,
         tgt_states=encoder_output,
