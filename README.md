@@ -10,11 +10,15 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
     - [2. Layer normalisation](#2-layer-normalisation)
     - [3. Dropout](#3-dropout)
     - [4. Scaling QK matrices](#4-scaling-qk-matrices)
-    - [5. Relative Attention Bias / Relative Position Bias](#5-relative-attention-bias--relative-position-bias)
+    - [5. Relative Attention Bias / Position embeddings](#5-relative-attention-bias--position-embeddings)
     - [6. Layer norm in T5 does not subtract mean](#6-layer-norm-in-t5-does-not-subtract-mean)
     - [7. T5 employs a final layer norm on the output of the encoder and decoder](#7-t5-employs-a-final-layer-norm-on-the-output-of-the-encoder-and-decoder)
     - [8. T5 uses tied word embeddings](#8-t5-uses-tied-word-embeddings)
     - [9. T5 also rescales the decoder output for tied word embedding in the language model head](#9-t5-also-rescales-the-decoder-output-for-tied-word-embedding-in-the-language-model-head)
+  - [Results](#results)
+    - [Input and Output](#input-and-output)
+    - [Time taken](#time-taken)
+    - [Conclusion](#conclusion)
 
 ## Setup Instructions
 
@@ -128,14 +132,14 @@ $$
 \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
 $$
 
-### 5. Relative Attention Bias / Relative Position Bias
+### 5. Relative Attention Bias / Position embeddings
 
-[Hugging Face Flax T5](https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/t5/modeling_flax_t5.py#L268) relative attention bias (relative position bias) is different from [Self-Attention with Relative Position Representations](https://arxiv.org/abs/1803.02155).
+T5's position embeddings (relative attention bias) is different from [Self-Attention with Relative Position Representations](https://arxiv.org/abs/1803.02155). _([Hugging Face's implementation](<(https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/t5/modeling_flax_t5.py#L268)>))_
 
 1. Uses binned relative attention bias to reduce time complexity for long sequences
 2. Only applies the bias before $\text{softmax}$
 
-> The T5 paper did not mention how relative position bias was used.
+> It is not mentioned in the T5 paper that they only apply the bias before the $\text{softmax}$
 
 $$
 \text{Attention}(Q, K, V) = \text{softmax}\left(QK^T + X\right)V
@@ -185,7 +189,7 @@ Where:
 
 **T5 Layer Norm**
 
-[HuggingFace T5 Layer Norm](https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/t5/modeling_flax_t5.py#L71) does not subtract the mean ($\mu$) and does not have a bias ($\beta$). They utilise [Root Mean Square Layer Normalization](https://arxiv.org/abs/1910.07467).
+T5's layer norm does not subtract the mean ($\mu$) and does not have a bias ($\beta$). They utilise [Root Mean Square Layer Normalization](https://arxiv.org/abs/1910.07467). _([HuggingFace's implementation](https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/t5/modeling_flax_t5.py#L71))_
 
 > The T5 paper did not mention that they used Root Mean Square Layer Normalization
 
@@ -238,21 +242,25 @@ Where:
 - $W_e$ is the input embeddings used for tie word embeddings.
 - $\operatorname{lm\_head}$ is the input embeddings used for tie word embeddings.
 
-```bash
-Input
- [
-   "translate English to German: That is good.",
-   "cola sentence: The course is jumping well.",
-   "stsb sentence1: The rhino grazed on the grass. sentence2: A rhino is grazing in a field.",
-   "summarize: In recent times, rapid advancements in technology have revolutionized various industries, enhancing efficiency, connectivity, and convenience for individuals and businesses alike.",
-],
+## Results
 
-Hugging Face output
-['Das ist gut.', 'acceptable', '4.0', 'rapid advancements in technology have revolutionized various industries']
+### Input and Output
 
-My output
-['Das ist gut.', 'acceptable', '4.0', 'rapid advancements in technology have revolutionized various industries']
+| Input                                                                                                                                                                                          | Hugging Face Output                                                     | My Output                                                               |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| translate English to German: That is good.                                                                                                                                                     | 'Das ist gut.'                                                          | 'Das ist gut.'                                                          |
+| cola sentence: The course is jumping well.                                                                                                                                                     | acceptable                                                              | acceptable                                                              |
+| stsb sentence1: The rhino grazed on the grass. sentence2: A rhino is grazing in a field.                                                                                                       | 4.0                                                                     | 4.0                                                                     |
+| summarize: In recent times, rapid advancements in technology have revolutionized various industries, enhancing efficiency, connectivity, and convenience for individuals and businesses alike. | rapid advancements in technology have revolutionized various industries | rapid advancements in technology have revolutionized various industries |
 
-Time taken
-Hugging Face: 16.14, Mine: 13.14 (18.57% faster)
-```
+### Time taken
+
+| Hugging Face | Mine   | Speed Improvement |
+| ------------ | ------ | ----------------- |
+| 16.14s       | 13.14s | 18.57% faster     |
+
+### Conclusion
+
+In a direct comparison, my implementation achieves comparable results to Hugging Face's implementation, while also demonstrating superior performance in terms of speed.
+Both implementations produced identical translations, acceptability scores, and summarization outputs in the provided examples.
+However, my implementation outperforms Hugging Face's implementation, completing the tasks approximately 18.57% faster.
