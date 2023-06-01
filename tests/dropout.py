@@ -1,3 +1,7 @@
+import sys, pathlib
+
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 from jax import random
 import jax.numpy as jnp
 

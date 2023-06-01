@@ -1,3 +1,7 @@
+import sys, pathlib
+
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 import jax.numpy as jnp
 
 from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration

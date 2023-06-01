@@ -1,3 +1,7 @@
+import sys, pathlib
+
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 import flax.linen
 import jax.numpy as jnp
 from jax import random
@@ -10,8 +14,8 @@ key = random.PRNGKey(seed)
 keys = random.split(key, 3)
 
 # set up params, x
-kernel = random.uniform(keys[0], shape=(10, ))
-bias = random.uniform(keys[1], shape=(10, ))
+kernel = random.uniform(keys[0], shape=(10,))
+bias = random.uniform(keys[1], shape=(10,))
 x = random.uniform(keys[2], shape=(3, 4, 10))
 
 params = {"kernel": kernel, "bias": bias}

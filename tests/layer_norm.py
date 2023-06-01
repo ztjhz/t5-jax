@@ -1,3 +1,7 @@
+import sys, pathlib
+
+sys.path.append(str(pathlib.Path(__file__).parents[1]))
+
 import flax.linen
 from model.layer_norm import fwd_layer_norm
 
