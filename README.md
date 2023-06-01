@@ -227,11 +227,11 @@ However, for T5 during training, the `lm_head` is the transpose of the word embe
 However, their [T5](https://github.com/tensorflow/mesh/blob/fa19d69eafc9a482aff0b59ddd96b025c0cb207d/mesh_tensorflow/transformer/transformer.py#L586) implementation scales the decoder output.
 
 $$
-\operatorname{lm\_head}(x) = \frac{x}{\sqrt{d_{\text{model}}}}W_e \textrm{\,\,\,\,instead of\,\,\,\,} \operatorname{lm\_head}(x) = xW_e
+\mathrm{lm\_head}(x) = \frac{x}{\sqrt{d_{\text{model}}}}W_e \textrm{\quad instead of\quad} \mathrm{lm\_head}(x) = xW_e
 $$
 
 $$
-y = \text{Softmax}(\text{lm\_head}(x))
+y = \text{Softmax}(\mathrm{lm\_head}(x))
 $$
 
 Where:
@@ -240,7 +240,7 @@ Where:
 - $y$ is the logits.
 - $d_{\text{model}}$ is the dimensionality of the model.
 - $W_e$ is the input embeddings used for tie word embeddings.
-- $\operatorname{lm\_head}$ is the input embeddings used for tie word embeddings.
+- $\mathrm{lm\_head}$ is the input embeddings used for tie word embeddings.
 
 ## Results
 
