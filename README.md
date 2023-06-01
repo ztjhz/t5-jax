@@ -4,6 +4,7 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
 
 - [JAX Implementation of T5](#jax-implementation-of-t5)
   - [Setup Instructions](#setup-instructions)
+  - [Examples](#examples)
   - [Analysis](#analysis)
     - [1. Jax precision on TPU is low by default](#1-jax-precision-on-tpu-is-low-by-default)
     - [2. Layer normalisation](#2-layer-normalisation)
@@ -28,6 +29,65 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
    pip install -r requirements.txt
    ```
 
+## Examples
+
+1. Tokenize inputs
+
+   ```python
+   from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration
+
+   model = FlaxT5ForConditionalGeneration.from_pretrained("allenai/unifiedqa-t5-base")
+   tokenizer = AutoTokenizer.from_pretrained("t5-base")
+   inputs = tokenizer(
+      ["summarize: My friends are cool but they eat too many carbs."], return_tensors="np"
+   )
+   input_ids = inputs["input_ids"]
+   ```
+
+2. Encoder
+
+   ```python
+   from model.transformer_encoder import fwd_transformer_encoder
+
+   encoder_output = fwd_transformer_encoder(
+      encoder_params=model.params["encoder"],
+      embedding_params=model.params["shared"],
+      input_ids=input_ids,
+   )
+   ```
+
+3. Decoder
+
+   ```python
+   from model.transformer_decoder import fwd_transformer_decoder
+
+   decoder_start_token_id = model.config.decoder_start_token_id
+   decoder_input_ids = (
+      jnp.ones((encoder_input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
+   )
+
+   decoder_output = fwd_transformer_decoder(
+      decoder_params=model.params["decoder"],
+      embedding_params=model.params["shared"],
+      decoder_input_ids=decoder_input_ids,
+      encoder_output=encoder_output,
+   )
+   ```
+
+4. Generate
+
+   ```python
+   from model.t5_generate import fwd_t5_generate
+
+   sequences = fwd_t5_generate(
+      model.params,
+      encoder_input_ids=input_ids,
+      eos_token_id=model.config.eos_token_id,
+      decoder_start_token_id=model.config.decoder_start_token_id,
+   )
+   output = tokenizer.batch_decode(sequences, skip_special_tokens=True)
+   ```
+
 ## Analysis
 
 ### 1. Jax precision on TPU is low by default
@@ -36,7 +96,7 @@ By default, jax uses `bfloat16` on TPU, even when the data type is float32.
 
 ### 2. Layer normalisation
 
-[Hugging Face T5](https://github.com/huggingface/transformers/blob/v4.29.1/src/transformers/models/t5/modeling_flax_t5.py#L488) performs pre-layer norm instead of post-layer norm.
+T5 performs pre-layer norm instead of post-layer norm.
 
 Attention:
 
@@ -177,3 +237,22 @@ Where:
 - $d_{\text{model}}$ is the dimensionality of the model.
 - $W_e$ is the input embeddings used for tie word embeddings.
 - $\operatorname{lm\_head}$ is the input embeddings used for tie word embeddings.
+
+```bash
+Input
+ [
+   "translate English to German: That is good.",
+   "cola sentence: The course is jumping well.",
+   "stsb sentence1: The rhino grazed on the grass. sentence2: A rhino is grazing in a field.",
+   "summarize: In recent times, rapid advancements in technology have revolutionized various industries, enhancing efficiency, connectivity, and convenience for individuals and businesses alike.",
+],
+
+Hugging Face output
+['Das ist gut.', 'acceptable', '4.0', 'rapid advancements in technology have revolutionized various industries']
+
+My output
+['Das ist gut.', 'acceptable', '4.0', 'rapid advancements in technology have revolutionized various industries']
+
+Time taken
+Hugging Face: 16.14, Mine: 13.14 (18.57% faster)
+```
