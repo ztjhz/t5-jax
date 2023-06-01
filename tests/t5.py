@@ -27,7 +27,7 @@ sequences_flax = [jnp.argmax(logits_flax)]
 output_flax = tokenizer.batch_decode(sequences_flax, skip_special_tokens=True)
 
 # my output
-logits = fwd_t5(model.params, encoder_input_ids, decoder_input_ids)
+logits, _ = fwd_t5(model.params, encoder_input_ids, decoder_input_ids)
 sequences = [jnp.argmax(logits)]
 output = tokenizer.batch_decode(sequences, skip_special_tokens=True)
 

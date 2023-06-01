@@ -33,7 +33,9 @@ def fwd_t5(
                                                 This is to cache the encoder output from previous runs
 
     Returns:
-        logits (jnp.ndarray): The output logits of the T5 model.
+        logits (jnp.ndarray): The output logits of the T5 model. (batch_size, decoder_sequence_length, vocab_size)
+
+        encoder_output (jnp.ndarray): The output of the encoder of the T5 model.
     """
     embedding_params = params["shared"]
     encoder_params = params["encoder"]
@@ -64,4 +66,4 @@ def fwd_t5(
         lm_head = params["lm_head"]
         logits = fwd_linear(params=lm_head, x=scaled_decoder_output)
 
-    return logits
+    return logits, encoder_output
