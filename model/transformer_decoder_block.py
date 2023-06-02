@@ -17,7 +17,7 @@ def fwd_transformer_decoder_block(
     tgt_states: List[float],
     self_attn_mask: jnp.ndarray,
     cross_attn_mask: jnp.ndarray,
-    dropout_key: List = None,
+    dropout_key: any = None,
     position_bias: jnp.ndarray = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
@@ -34,7 +34,7 @@ def fwd_transformer_decoder_block(
 
         cross_attn_mask (jnp.ndarray[bool]): Boolean mask for encoder-decoder sequence. `True` for valid positions, and `False` for positions to be masked. (Usually casual mask)
 
-        dropout_key (List, optional): A key to use for dropout. Default is `None`, which means no dropout is applied.
+        dropout_key (KeyArray, optional): A key to use for dropout. Default is `None`, which means no dropout is applied.
 
         position_bias (jnp.ndarray[float], optional): Precomputed position bias for relative positional encoding. If `None` (1st layer), it will be calculated inside this function.
 

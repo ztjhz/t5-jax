@@ -15,7 +15,7 @@ def fwd_transformer_encoder_block(
     params: Dict,
     qry_states: jnp.ndarray,
     mask: jnp.ndarray,
-    dropout_key: List = None,
+    dropout_key: any = None,
     position_bias: jnp.ndarray = None,
 ) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """
@@ -28,7 +28,7 @@ def fwd_transformer_encoder_block(
 
         mask (jnp.ndarray[bool]): Boolean mask for input sequence. `True` for valid positions, and `False` for positions to be masked.
 
-        dropout_key (List, optional): A key to use for dropout. Default is `None`, which means no dropout is applied.
+        dropout_key (KeyArray, optional): A key to use for dropout. Default is `None`, which means no dropout is applied.
 
         position_bias (jnp.ndarray[float], optional): Precomputed position bias for relative positional encoding. If `None` (1st layer), it will be calculated inside this function.
 

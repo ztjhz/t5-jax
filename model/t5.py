@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-import jax.nn as jnn
+from jax import random
 
 from model.transformer_encoder import fwd_transformer_encoder
 from model.transformer_decoder import fwd_transformer_decoder
@@ -12,6 +12,7 @@ def fwd_t5(
     decoder_input_ids: jnp.ndarray,
     tie_word_embeddings: bool = True,
     encoder_output: jnp.ndarray = None,
+    dropout_key: any = None,
 ):
     """
     Run forward propagation through the T5 model.
@@ -32,6 +33,8 @@ def fwd_t5(
         encoder_output (jnp.ndarray, optional): If provided, this output is used instead of re-computing the encoder output. Default is None.
                                                 This is to cache the encoder output from previous runs
 
+        dropout_key (KeyArray, optional): A key to use for dropout. Default is `None`, which means no dropout is applied.
+
     Returns:
         logits (jnp.ndarray): The output logits of the T5 model. (batch_size, decoder_sequence_length, vocab_size)
 
@@ -42,11 +45,16 @@ def fwd_t5(
     decoder_params = params["decoder"]
     embeddings = embedding_params["embedding"]
 
+    encoder_dropout_key, decoder_dropout_key = None, None
+    if dropout_key is not None:
+        encoder_dropout_key, decoder_dropout_key = random.split(dropout_key, 2)
+
     if encoder_output is None:
         encoder_output = fwd_transformer_encoder(
             encoder_params=encoder_params,
             embedding_params=embedding_params,
             input_ids=encoder_input_ids,
+            dropout_key=encoder_dropout_key,
         )
 
     decoder_output = fwd_transformer_decoder(
@@ -54,6 +62,7 @@ def fwd_t5(
         embedding_params=embedding_params,
         decoder_input_ids=decoder_input_ids,
         encoder_output=encoder_output,
+        dropout_key=decoder_dropout_key,
     )
 
     if tie_word_embeddings:
