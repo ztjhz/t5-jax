@@ -7,6 +7,7 @@ import jax.numpy as jnp
 from transformers import AutoTokenizer, FlaxT5ForConditionalGeneration
 
 from model.transformer_encoder import fwd_transformer_encoder
+from config import config
 
 
 tokenizer = AutoTokenizer.from_pretrained("t5-base")
@@ -23,10 +24,14 @@ output_flax = model.encode(
 )["last_hidden_state"]
 
 # my output
+mask_1d = input_ids != config.PAD_TOKEN_ID
+mask = jnp.einsum("bi,bj->bij", mask_1d, mask_1d)[:, None]
+
 output = fwd_transformer_encoder(
     encoder_params=model.params["encoder"],
     embedding_params=model.params["shared"],
     input_ids=input_ids,
+    mask=mask,
 )
 
 assert jnp.allclose(output_flax, output)

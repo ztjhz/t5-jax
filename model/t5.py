@@ -5,6 +5,8 @@ from model.transformer_encoder import fwd_transformer_encoder
 from model.transformer_decoder import fwd_transformer_decoder
 from model.linear import fwd_linear
 
+from config import config
+
 
 def fwd_t5(
     params: dict,
@@ -45,6 +47,23 @@ def fwd_t5(
     decoder_params = params["decoder"]
     embeddings = embedding_params["embedding"]
 
+    # Encoder self attention  mask
+    mask_enc_1d = encoder_input_ids != config.PAD_TOKEN_ID
+    mask_enc = jnp.einsum("bi,bj->bij", mask_enc_1d, mask_enc_1d)[:, None]
+
+    # Decoder self attention mask (casual masking / auto regressive)
+    n = decoder_input_ids.shape[1]
+    lower_triangle = jnp.tri(n, dtype=jnp.bool_)
+    upper_triangle = jnp.tri(n, k=1, dtype=jnp.bool_)
+    mask_dec = jnp.reshape(
+        jnp.einsum("ij,ij->ij", lower_triangle, upper_triangle), (1, 1, n, n)
+    )
+
+    # Encoder-decoder cross attention mask
+    mask_dec_1d = jnp.ones(decoder_input_ids.shape, dtype=jnp.bool_)
+    mask_enc_dec = jnp.einsum("bi,bj->bij", mask_dec_1d, mask_enc_1d)[:, None]
+
+    # Set up dropout keys
     encoder_dropout_key, decoder_dropout_key = None, None
     if dropout_key is not None:
         encoder_dropout_key, decoder_dropout_key = random.split(dropout_key, 2)
@@ -55,6 +74,7 @@ def fwd_t5(
             embedding_params=embedding_params,
             input_ids=encoder_input_ids,
             dropout_key=encoder_dropout_key,
+            mask=mask_enc,
         )
 
     decoder_output = fwd_transformer_decoder(
@@ -63,6 +83,8 @@ def fwd_t5(
         decoder_input_ids=decoder_input_ids,
         encoder_output=encoder_output,
         dropout_key=decoder_dropout_key,
+        self_attn_mask=mask_dec,
+        cross_attn_mask=mask_enc_dec,
     )
 
     if tie_word_embeddings:

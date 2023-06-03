@@ -12,22 +12,10 @@ def fwd_transformer_decoder(
     embedding_params: dict,
     decoder_input_ids: jnp.ndarray,
     encoder_output: jnp.ndarray,
+    self_attn_mask: jnp.ndarray,
+    cross_attn_mask: jnp.ndarray,
     dropout_key: list = None,
 ):
-    # Self attention mask (casual masking / auto regressive)
-    n = decoder_input_ids.shape[1]
-    lower_triangle = jnp.tri(n, dtype=jnp.bool_)
-    upper_triangle = jnp.tri(n, k=1, dtype=jnp.bool_)
-    self_attn_mask = jnp.reshape(
-        jnp.einsum("ij,ij->ij", lower_triangle, upper_triangle), (1, 1, n, n)
-    )
-
-    # Cross attention mask
-    batch_size, sequence_length = encoder_output.shape[:2]
-    mask_enc_1d = jnp.ones((batch_size, sequence_length), dtype=jnp.bool_)
-    mask_dec_1d = jnp.ones(decoder_input_ids.shape, dtype=jnp.bool_)
-    cross_attn_mask = jnp.einsum("bi,bj->bij", mask_dec_1d, mask_enc_1d)[:, None]
-
     # Convert inputs to embeddings
     x = fwd_embedding(embedding_params, decoder_input_ids)
 
