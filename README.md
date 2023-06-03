@@ -255,9 +255,11 @@ Where:
 
 ### Time taken
 
+The inputs above are fed into the Hugging Face transformers model and my own model. Generation was repeated 100 times and here is the total time taken:
+
 | Hugging Face | Mine   | Speed Improvement |
 | ------------ | ------ | ----------------- |
-| 16.14s       | 13.14s | 18.57% faster     |
+| 190.63s      | 64.36s | 66.24% faster     |
 
 ### Conclusion
 

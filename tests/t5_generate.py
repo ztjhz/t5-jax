@@ -25,18 +25,22 @@ input_ids, attention_mask = inputs.input_ids, inputs.attention_mask
 
 # flax output
 start_time_flax = time.time()
-sequences_flax = model.generate(input_ids, attention_mask=attention_mask)["sequences"]
+sequences_flax = None
+for i in range(100):
+    sequences_flax = model.generate(input_ids, attention_mask=attention_mask)["sequences"]
 end_time_flax = time.time()
 output_flax = tokenizer.batch_decode(sequences_flax, skip_special_tokens=True)
 
 # my output
 start_time = time.time()
-sequences = fwd_t5_generate(
-    model.params,
-    encoder_input_ids=input_ids,
-    eos_token_id=model.config.eos_token_id,
-    decoder_start_token_id=model.config.decoder_start_token_id,
-)
+sequences = None
+for i in range(100):
+    sequences = fwd_t5_generate(
+        model.params,
+        encoder_input_ids=input_ids,
+        eos_token_id=model.config.eos_token_id,
+        decoder_start_token_id=model.config.decoder_start_token_id,
+    )
 end_time = time.time()
 output = tokenizer.batch_decode(sequences, skip_special_tokens=True)
 
