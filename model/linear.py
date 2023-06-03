@@ -16,10 +16,10 @@ def fwd_linear(params: Dict, x: jnp.ndarray) -> jnp.ndarray:
     return y
 
 
-def init_linear(features: int, use_bias: bool = False, seed: int = 2418):
+def init_linear(shape: any, use_bias: bool = False, seed: int = 2418):
     initializer = jnn.initializers.normal(1)
     key = random.PRNGKey(seed)
-    params = {"kernel": initializer(key, (features,))}
+    params = {"kernel": initializer(key, shape)}
     if use_bias:
-        params["bias"] = jnp.zeros((features,))
+        params["bias"] = jnp.zeros(shape)
     return params

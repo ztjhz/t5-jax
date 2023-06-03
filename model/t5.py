@@ -73,6 +73,6 @@ def fwd_t5(
         logits = fwd_linear({"kernel": embeddings.T}, scaled_decoder_output)
     else:
         lm_head = params["lm_head"]
-        logits = fwd_linear(params=lm_head, x=scaled_decoder_output)
+        logits = fwd_linear(params=lm_head, x=decoder_output)
 
     return logits, encoder_output
