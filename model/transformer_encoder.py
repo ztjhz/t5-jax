@@ -13,8 +13,10 @@ def fwd_transformer_encoder(
     input_ids: jnp.ndarray,
     dropout_key: list = None,
 ):
+    pad_token_id = 0
+
     # create mask
-    mask_dec_1d = jnp.ones(input_ids.shape, dtype=jnp.bool_)
+    mask_dec_1d = input_ids != pad_token_id
     mask = jnp.einsum("bi,bj->bij", mask_dec_1d, mask_dec_1d)[:, None]
 
     # convert inputs to embeddings

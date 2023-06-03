@@ -21,11 +21,11 @@ inputs = tokenizer(
     return_tensors="np",
     padding=True,
 )
-input_ids = inputs.input_ids
+input_ids, attention_mask = inputs.input_ids, inputs.attention_mask
 
 # flax output
 start_time_flax = time.time()
-sequences_flax = model.generate(input_ids)["sequences"]
+sequences_flax = model.generate(input_ids, attention_mask=attention_mask)["sequences"]
 end_time_flax = time.time()
 output_flax = tokenizer.batch_decode(sequences_flax, skip_special_tokens=True)
 
