@@ -6,7 +6,7 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
   - [Setup Instructions](#setup-instructions)
   - [Examples](#examples)
   - [Analysis](#analysis)
-    - [1. Jax precision on TPU is low by default](#1-jax-precision-on-tpu-is-low-by-default)
+    - [1. JAX precision](#1-jax-precision)
     - [2. Layer normalisation](#2-layer-normalisation)
     - [3. Dropout](#3-dropout)
     - [4. Scaling QK matrices](#4-scaling-qk-matrices)
@@ -94,9 +94,10 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
 
 ## Analysis
 
-### 1. Jax precision on TPU is low by default
+### 1. JAX precision
 
-By default, jax uses `bfloat16` on TPU, even when the data type is float32.
+1. On TPU, JAX defaults to using `bfloat16` for matrix multiplication even when the data type is specified as `float32`. While this may speed up training, some precision is lost.
+2. When utilizing GPU, the Hugging Face transformers model exhibits distinct precision compared to JAX.
 
 ### 2. Layer normalisation
 

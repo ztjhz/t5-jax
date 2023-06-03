@@ -1,3 +1,7 @@
+import jax
+
+jax.config.update("jax_platforms", "cpu")
+
 import sys, pathlib
 
 sys.path.append(str(pathlib.Path(__file__).parents[1]))
