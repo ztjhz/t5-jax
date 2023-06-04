@@ -36,6 +36,7 @@ def train_forward(
 
 train_forward_and_backward = jax.value_and_grad(train_forward)
 
+
 @jax.jit
 def train_step(
     params: dict,
@@ -117,7 +118,10 @@ def main(params: dict):
         epoch_train_loss = 0
         total_train_steps = 0
 
-        train_set, eval_set = train_generator.shuffle(), eval_generator.shuffle()
+        key, shuffle_key_train, shuffle_key_test = random.split(key, 3)
+
+        train_set = train_generator.shuffle(seed=shuffle_key_train)
+        eval_set = eval_generator.shuffle(seed=shuffle_key_test)
 
         for step, batch_train in enumerate(train_set.iter(batch_size=batch_size)):
             key, dropout_key = random.split(key)
