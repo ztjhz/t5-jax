@@ -83,7 +83,7 @@ def main(params: dict):
     n_epochs = 2
     eval_interval = 1024
     batch_size = 32
-    lr = 0.5
+    lr = 0.1
     clipping = 0.1
     eps = 0.001
 
