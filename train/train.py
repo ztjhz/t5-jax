@@ -79,9 +79,9 @@ def eval_step(
 
 
 def main(params: dict):
-    n_epochs = 10
+    n_epochs = 2
     eval_interval = 1024
-    batch_size = 8
+    batch_size = 10
     lr = 5e-3
 
     wandb.init(
@@ -90,9 +90,10 @@ def main(params: dict):
             "learning_rate": lr,
             "batch size": batch_size,
             "optimizer": "adafactor",
-            "dataset": "wmt14-validation",
+            "dataset": "wmt14-train-30000",
             "epochs": n_epochs,
             "device": "gpu",
+            "params": "init_params_embedding_lm_head",
         },
     )
 
@@ -100,7 +101,7 @@ def main(params: dict):
     optimizer = optax.adafactor(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    train_generator = dataset_generator(train=True)
+    train_generator = dataset_generator(train=True, train_data_size=30_000)
     eval_generator = dataset_generator(train=False)
     key = random.PRNGKey(2418)
 
@@ -147,7 +148,7 @@ def main(params: dict):
 
 
 if __name__ == "__main__":
-    from utils.params_utils import init_params_random_lm_head
+    from utils.params_utils import init_params_embedding_lm_head
 
-    params = init_params_random_lm_head()
+    params = init_params_embedding_lm_head()
     main(params)

@@ -3,6 +3,8 @@ import jax.numpy as jnp
 from transformers import AutoTokenizer
 from datasets import DatasetDict, load_dataset
 
+from typing import Optional
+
 from config import config
 
 tokenizer = AutoTokenizer.from_pretrained("t5-base")
@@ -47,7 +49,11 @@ def process_dataset(dataset: DatasetDict) -> DatasetDict:
     )
 
 
-def dataset_generator(train: bool = True) -> DatasetDict:
-    train_set = load_dataset("wmt14", "fr-en", split="validation" if train else "test")
+def dataset_generator(
+    train: bool = True, train_data_size: Optional[int] = None
+) -> DatasetDict:
+    train_set = load_dataset("wmt14", "fr-en", split="train" if train else "test")
+    if train and train_data_size is not None:
+        train_set = train_set.select(range(train_data_size))
     train_set = process_dataset(train_set)
     return train_set
