@@ -36,13 +36,12 @@ def train_forward(
 
 train_forward_and_backward = jax.value_and_grad(train_forward)
 
-
+@jax.jit
 def train_step(
     params: dict,
     encoder_input_ids: jnp.ndarray,
     decoder_input_ids: jnp.ndarray,
     labels: jnp.ndarray,
-    optimizer: optax.GradientTransformation,
     opt_state: optax.OptState,
     dropout_key: any,
 ) -> tuple[dict, optax.OptState, jnp.ndarray]:
@@ -61,6 +60,7 @@ def train_step(
 
 
 # eval step does not have dropout
+@jax.jit
 def eval_step(
     params: dict,
     encoder_input_ids: jnp.ndarray,
@@ -81,32 +81,41 @@ def eval_step(
 def main(params: dict):
     n_epochs = 2
     eval_interval = 1024
-    batch_size = 10
-    lr = 5e-3
+    batch_size = 32
+    lr = 0.03
+    clipping = 0.1
+    eps = 0.001
 
     wandb.init(
         project="t5-jax-fr-en-finetune",
         config={
             "learning_rate": lr,
+            "clipping": clipping,
+            "eps": eps,
             "batch size": batch_size,
-            "optimizer": "adafactor",
-            "dataset": "wmt14-train-30000",
+            "optimizer": "sgd-adapt-grad-clip",
+            "dataset": "wmt14-train",
             "epochs": n_epochs,
-            "device": "gpu",
+            "device": "tpu",
             "params": "init_params_embedding_lm_head",
         },
     )
 
     # set up optimizer
-    optimizer = optax.adafactor(learning_rate=lr)
+    global optimizer
+    optimizer = optax.chain(
+        optax.adaptive_grad_clip(clipping, eps=eps),
+        optax.sgd(learning_rate=lr),
+    )
     opt_state = optimizer.init(params)
 
-    train_generator = dataset_generator(train=True, train_data_size=30_000)
+    train_generator = dataset_generator(train=True)
     eval_generator = dataset_generator(train=False)
     key = random.PRNGKey(2418)
 
     for epoch in range(n_epochs):
         epoch_train_loss = 0
+        total_train_steps = 0
 
         train_set, eval_set = train_generator.shuffle(), eval_generator.shuffle()
 
@@ -118,18 +127,19 @@ def main(params: dict):
                 encoder_input_ids=batch_train["encoder_input_ids"],
                 decoder_input_ids=batch_train["decoder_input_ids"],
                 labels=batch_train["labels"],
-                optimizer=optimizer,
                 opt_state=opt_state,
                 dropout_key=dropout_key,
             )
 
             epoch_train_loss += loss
-            print(f"Step {step}, loss {loss}")
+            total_train_steps += 1
+            print(f"Epoch {epoch}, Step {step}, train loss {loss}")
             wandb.log({"train loss": loss})
 
             # eval
             if step % eval_interval == 0:
-                total_loss = 0
+                total_eval_loss = 0
+                total_eval_steps = 0
                 for batch_eval in eval_set.iter(batch_size=batch_size):
                     loss = eval_step(
                         params=params,
@@ -137,18 +147,21 @@ def main(params: dict):
                         decoder_input_ids=batch_eval["decoder_input_ids"],
                         labels=batch_eval["labels"],
                     )
-                    total_loss += loss
+                    total_eval_loss += loss
+                    total_eval_steps += 1
 
-                print(f"Epoch {epoch}, step {step}, Total loss: {total_loss}")
-            wandb.log({"eval loss": total_loss})
+                print(f"Epoch {epoch}, step {step}, Eval loss: {total_eval_loss / total_eval_steps}")
+                wandb.log({"eval loss": total_eval_loss / total_eval_steps})
 
-        print(f"Epoch {epoch}, loss {epoch_train_loss}")
-        wandb.log({"epoch loss": epoch_train_loss})
+        print(f"Epoch {epoch}, loss {epoch_train_loss / total_train_steps}")
+        wandb.log({"epoch loss": epoch_train_loss / total_train_steps})
         jnp.save(f"params-{epoch}.npy", params)
 
 
 if __name__ == "__main__":
+    from jax_smi import initialise_tracking
     from utils.params_utils import init_params_embedding_lm_head
 
+    initialise_tracking()
     params = init_params_embedding_lm_head()
     main(params)

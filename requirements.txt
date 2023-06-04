@@ -2,3 +2,4 @@ transformers
 flax
 datasets
 wandb
+jax-smi
