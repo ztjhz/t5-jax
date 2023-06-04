@@ -9,6 +9,7 @@ import jax.random as random
 from model.t5 import fwd_t5
 from utils.loss_utils import cross_entropy_loss
 from utils.data_utils import dataset_generator
+from utils.random_utils import key2seed
 from config import config
 
 import optax
@@ -120,8 +121,8 @@ def main(params: dict):
 
         key, shuffle_key_train, shuffle_key_test = random.split(key, 3)
 
-        train_set = train_generator.shuffle(seed=shuffle_key_train)
-        eval_set = eval_generator.shuffle(seed=shuffle_key_test)
+        train_set = train_generator.shuffle(seed=key2seed(shuffle_key_train))
+        eval_set = eval_generator.shuffle(seed=key2seed(shuffle_key_test))
 
         for step, batch_train in enumerate(train_set.iter(batch_size=batch_size)):
             key, dropout_key = random.split(key)
