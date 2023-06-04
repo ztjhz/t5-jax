@@ -1,3 +1,4 @@
 .venv
 *.npy
 __pycache__/
+wandb/

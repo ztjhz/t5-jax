@@ -12,6 +12,7 @@ from utils.data_utils import dataset_generator
 from config import config
 
 import optax
+import wandb
 
 
 def train_forward(
@@ -78,13 +79,26 @@ def eval_step(
 
 
 def main(params: dict):
-    # set up optimizer
-    optimizer = optax.adafactor(learning_rate=0.001)
-    opt_state = optimizer.init(params)
-
-    n_epochs = 1
+    n_epochs = 10
     eval_interval = 1024
-    batch_size = 1
+    batch_size = 8
+    lr = 5e-3
+
+    wandb.init(
+        project="t5-jax-fr-en-finetune",
+        config={
+            "learning_rate": lr,
+            "batch size": batch_size,
+            "optimizer": "adafactor",
+            "dataset": "wmt14-validation",
+            "epochs": n_epochs,
+            "device": "gpu",
+        },
+    )
+
+    # set up optimizer
+    optimizer = optax.adafactor(learning_rate=lr)
+    opt_state = optimizer.init(params)
 
     train_generator = dataset_generator(train=True)
     eval_generator = dataset_generator(train=False)
@@ -110,6 +124,7 @@ def main(params: dict):
 
             epoch_train_loss += loss
             print(f"Step {step}, loss {loss}")
+            wandb.log({"train loss": loss})
 
             # eval
             if step % eval_interval == 0:
@@ -124,6 +139,15 @@ def main(params: dict):
                     total_loss += loss
 
                 print(f"Epoch {epoch}, step {step}, Total loss: {total_loss}")
+            wandb.log({"eval loss": total_loss})
 
         print(f"Epoch {epoch}, loss {epoch_train_loss}")
+        wandb.log({"epoch loss": epoch_train_loss})
         jnp.save(f"params-{epoch}.npy", params)
+
+
+if __name__ == "__main__":
+    from utils.params_utils import init_params_random_lm_head
+
+    params = init_params_random_lm_head()
+    main(params)
