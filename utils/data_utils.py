@@ -20,9 +20,9 @@ def tokenize_text(text: list[str]) -> jnp.ndarray:
 
 def transform_data(data: list[dict]) -> jnp.ndarray:
     en, fr = data["en"], data["fr"]
-    prefix = "translate french to english:"
+    prefix = "translate french to english: "
     encoder_input_ids, labels = (
-        tokenize_text(f"{prefix}: {fr}"),
+        tokenize_text(list(map(lambda x: prefix + x, fr))),
         tokenize_text(en),
     )
 
