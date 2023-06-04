@@ -9,6 +9,7 @@ import jax.random as random
 from model.t5 import fwd_t5
 from utils.loss_utils import cross_entropy_loss
 from utils.data_utils import dataset_generator
+from config import config
 
 import optax
 
@@ -27,7 +28,7 @@ def train_forward(
         tie_word_embeddings=False,
         dropout_key=dropout_key,
     )
-    mask_dec_1d = jnp.ones(decoder_input_ids.shape, dtype=jnp.bool_)
+    mask_dec_1d = labels != config.PAD_TOKEN_ID
     loss = cross_entropy_loss(logits=logits, labels=labels, mask=mask_dec_1d)
     return loss
 
@@ -53,7 +54,7 @@ def train_step(
     )
 
     updates, opt_state = optimizer.update(grads, opt_state, params)
-    optax.apply_updates(params, updates)
+    params = optax.apply_updates(params, updates)
 
     return params, opt_state, loss
 
@@ -71,7 +72,7 @@ def eval_step(
         decoder_input_ids=decoder_input_ids,
         tie_word_embeddings=False,
     )
-    mask_dec_1d = jnp.ones(decoder_input_ids.shape, dtype=jnp.bool_)
+    mask_dec_1d = labels != config.PAD_TOKEN_ID
     loss = cross_entropy_loss(logits=logits, labels=labels, mask=mask_dec_1d)
     return loss
 
@@ -125,3 +126,4 @@ def main(params: dict):
                 print(f"Epoch {epoch}, step {step}, Total loss: {total_loss}")
 
         print(f"Epoch {epoch}, loss {epoch_train_loss}")
+        jnp.save(f"params-{epoch}.npy", params)
