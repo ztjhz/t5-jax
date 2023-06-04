@@ -51,4 +51,4 @@ def load_params(file_path: str) -> jnp.ndarray:
     Returns:
         The loaded model parameters.
     """
-    return jnp.load(file_path, allow_picky=True).item()
+    return jnp.load(file_path, allow_pickle=True).item()
