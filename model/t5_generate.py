@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 
 from model.t5 import fwd_t5
+from config import config
 
 
 def fwd_t5_generate(
@@ -34,8 +35,12 @@ def fwd_t5_generate(
     decoder_input_ids = (
         jnp.ones((encoder_input_ids.shape[0], 1), dtype="i4") * decoder_start_token_id
     )
+    # to keep track of whether a sequence has reached EOS (batch_size, 1)
+    is_complete = jnp.zeros((encoder_input_ids.shape[0], 1), dtype=jnp.bool_)
 
-    while jnp.any(token != eos_token_id):
+    i = 0
+    while i < config.MAX_GENERATION_LENGTH and not jnp.all(is_complete):
+        i += 1
         # logits shape: (batch_size, decoder_sequence_length, vocab_size)
         logits, encoder_output = fwd_t5(
             params=params,
@@ -54,6 +59,12 @@ def fwd_t5_generate(
 
         # reshape to (batch_size, 1)
         token = token[:, None]
+
+        # convert token of completed sequence to pad
+        token = token * ~is_complete + config.PAD_TOKEN_ID * is_complete
+
+        # update whether a sequence has reached EOS
+        is_complete = is_complete | token == eos_token_id
 
         # add current token output to the decoder_input_ids
         decoder_input_ids = jnp.concatenate([decoder_input_ids, token], axis=-1)
