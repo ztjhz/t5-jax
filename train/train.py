@@ -86,7 +86,7 @@ def main(params: dict):
     eval_interval = 1024
     save_interval = 20480
     batch_size = 32
-    lr = 0.2
+    lr = 0.05
     clipping = 0.1
     eps = 0.001
 
@@ -104,7 +104,6 @@ def main(params: dict):
             "device": "tpu",
             "params": "init_params_embedding_lm_head",
         },
-        notes="No task prefix"
     )
 
     # set up optimizer
