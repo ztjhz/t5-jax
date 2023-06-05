@@ -81,8 +81,9 @@ def eval_step(
 
 
 def main(params: dict):
-    n_epochs = 2
+    n_epochs = 1
     eval_interval = 1024
+    save_interval = 20480
     batch_size = 32
     lr = 1e-3
 
@@ -151,9 +152,11 @@ def main(params: dict):
                 print(f"Epoch {epoch}, step {step}, Eval loss: {total_eval_loss / total_eval_steps}")
                 wandb.log({"eval loss": total_eval_loss / total_eval_steps})
 
+            if step % save_interval == 0:
+                jnp.save(f"{wandb.run.name}-{epoch}-{step}.npy", params)
+
         print(f"Epoch {epoch}, loss {epoch_train_loss / total_train_steps}")
         wandb.log({"epoch loss": epoch_train_loss / total_train_steps})
-        jnp.save(f"params-{epoch}.npy", params)
 
 
 if __name__ == "__main__":
