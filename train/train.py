@@ -82,6 +82,7 @@ def eval_step(
 
 def main(params: dict):
     n_epochs = 1
+    max_steps = 100_000
     eval_interval = 1024
     save_interval = 20480
     batch_size = 32
@@ -99,6 +100,7 @@ def main(params: dict):
             "optimizer": "sgd-adapt-grad-clip",
             "dataset": "wmt14-train",
             "epochs": n_epochs,
+            "max_steps": max_steps,
             "device": "tpu",
             "params": "init_params_embedding_lm_head",
         },
@@ -115,6 +117,7 @@ def main(params: dict):
     train_generator = dataset_generator(train=True)
     eval_generator = dataset_generator(train=False)
     key = random.PRNGKey(2418)
+    total_steps = 0
 
     for epoch in range(n_epochs):
         epoch_train_loss = 0
@@ -127,6 +130,10 @@ def main(params: dict):
 
         for step, batch_train in enumerate(train_set.iter(batch_size=batch_size)):
             key, dropout_key = random.split(key)
+
+            total_steps += 1
+            if total_steps > max_steps:
+                break
 
             params, opt_state, loss = train_step(
                 params=params,
@@ -161,6 +168,9 @@ def main(params: dict):
 
             if step % save_interval == 0:
                 jnp.save(f"{wandb.run.name}-{epoch}-{step}.npy", params)
+
+        if total_steps > max_steps:
+            break
 
         print(f"Epoch {epoch}, loss {epoch_train_loss / total_train_steps}")
         wandb.log({"epoch loss": epoch_train_loss / total_train_steps})
