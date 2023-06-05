@@ -86,7 +86,7 @@ def main(params: dict):
     eval_interval = 1024
     save_interval = 20480
     batch_size = 32
-    lr = 0.05
+    lr = 0.01
     clipping = 0.1
     eps = 0.001
 
