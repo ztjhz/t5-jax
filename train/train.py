@@ -102,6 +102,7 @@ def main(params: dict):
             "device": "tpu",
             "params": "init_params_embedding_lm_head",
         },
+        notes="No task prefix"
     )
 
     # set up optimizer
