@@ -10,7 +10,7 @@ from model.t5 import fwd_t5
 from utils.loss_utils import cross_entropy_loss
 from utils.data_utils import dataset_generator
 from utils.random_utils import key2seed
-from train.evaluate import evaluate_model_with_sequential_generation
+from utils.evaluation_utils import evaluate_model_with_sequential_generation
 from config import config
 
 import optax
