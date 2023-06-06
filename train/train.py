@@ -94,18 +94,19 @@ def main(params: dict):
         config={
             "learning_rate": lr,
             "batch size": batch_size,
-            "optimizer": "adam",
+            "optimizer": "adafactor",
             "dataset": "wmt14-train",
             "epochs": n_epochs,
             "max_steps": max_steps,
             "device": "tpu",
             "params": "init_params_embedding_lm_head",
         },
+        notes="scale decoder output for lm_head"
     )
 
     # set up optimizer
     global optimizer
-    optimizer = optax.adamw(learning_rate=lr)
+    optimizer = optax.adafactor(learning_rate=lr)
     opt_state = optimizer.init(params)
 
     train_generator = dataset_generator("train")

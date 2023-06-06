@@ -90,14 +90,14 @@ def fwd_t5(
         cross_attn_mask=mask_enc_dec,
     )
 
+    # scale decoder output
+    d_model = encoder_output.shape[-1]
+    scaled_decoder_output = decoder_output / (d_model**0.5)
+    
     if tie_word_embeddings:
-        # scale decoder output
-        d_model = encoder_output.shape[-1]
-        scaled_decoder_output = decoder_output / (d_model**0.5)
-
         logits = fwd_linear({"kernel": embeddings.T}, scaled_decoder_output)
     else:
         lm_head = params["lm_head"]
-        logits = fwd_linear(params=lm_head, x=decoder_output)
+        logits = fwd_linear(params=lm_head, x=scaled_decoder_output)
 
     return logits, encoder_output
