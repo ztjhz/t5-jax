@@ -50,10 +50,21 @@ def process_dataset(dataset: DatasetDict) -> DatasetDict:
 
 
 def dataset_generator(
-    train: bool = True, train_data_size: Optional[int] = None
+    split: str = "train", train_data_size: Optional[int] = None
 ) -> DatasetDict:
-    train_set = load_dataset("wmt14", "fr-en", split="train" if train else "test")
-    if train and train_data_size is not None:
-        train_set = train_set.select(range(train_data_size))
-    train_set = process_dataset(train_set)
-    return train_set
+    """
+    Args:
+        split (str): Value can be "split", "train" or "validation". Defaults to "train".
+
+        train_data_size (int, optional): How large the train data set to return.
+
+    Returns:
+        DatasetDict
+    """
+    if split not in ("train", "test", "validation"):
+        split = "train"
+    dataset = load_dataset("wmt14", "fr-en", split=split)
+    if split == "train" and train_data_size is not None:
+        dataset = dataset.select(range(train_data_size))
+    dataset = process_dataset(dataset)
+    return dataset

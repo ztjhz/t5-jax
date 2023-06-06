@@ -10,6 +10,7 @@ from model.t5 import fwd_t5
 from utils.loss_utils import cross_entropy_loss
 from utils.data_utils import dataset_generator
 from utils.random_utils import key2seed
+from train.evaluate import evaluate_model_with_sequential_generation
 from config import config
 
 import optax
@@ -107,8 +108,8 @@ def main(params: dict):
     optimizer = optax.adamw(learning_rate=lr)
     opt_state = optimizer.init(params)
 
-    train_generator = dataset_generator(train=True)
-    eval_generator = dataset_generator(train=False)
+    train_generator = dataset_generator("train")
+    eval_generator = dataset_generator("test")
     key = random.PRNGKey(2418)
     total_steps = 0
 
@@ -158,6 +159,10 @@ def main(params: dict):
 
                 print(f"Epoch {epoch}, step {step}, Eval loss: {total_eval_loss / total_eval_steps}")
                 wandb.log({"eval loss": total_eval_loss / total_eval_steps})
+
+                # compute bleu score
+                bleu = evaluate_model_with_sequential_generation(params)
+                wandb.log({"bleu score": bleu})
 
             if step % save_interval == 0:
                 jnp.save(f"{wandb.run.name}-{epoch}-{step}.npy", params)
