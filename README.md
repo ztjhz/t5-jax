@@ -1,24 +1,31 @@
 # JAX Implementation of T5
 
-This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.10683.pdf) model.
+This project is an implementation of the [T5](https://arxiv.org/pdf/1910.10683.pdf) model using JAX. It takes a functional approach, leveraging the capabilities of JAX to achieve its goals. The primary objective of this project is twofold: to offer a versatile codebase for researching Transformer-based LLM architectures, and to show how Transformer-based language models can be implemented using JAX and trained on Google Cloud TPUs.
 
-- [JAX Implementation of T5](#jax-implementation-of-t5)
-  - [Setup Instructions](#setup-instructions)
-  - [Examples](#examples)
-  - [Analysis](#analysis)
-    - [1. JAX precision](#1-jax-precision)
-    - [2. Layer normalisation](#2-layer-normalisation)
-    - [3. Dropout](#3-dropout)
-    - [4. Scaling QK matrices](#4-scaling-qk-matrices)
-    - [5. Relative Attention Bias / Position embeddings](#5-relative-attention-bias--position-embeddings)
-    - [6. Layer norm in T5 does not subtract mean](#6-layer-norm-in-t5-does-not-subtract-mean)
-    - [7. T5 employs a final layer norm on the output of the encoder and decoder](#7-t5-employs-a-final-layer-norm-on-the-output-of-the-encoder-and-decoder)
-    - [8. T5 uses tied word embeddings](#8-t5-uses-tied-word-embeddings)
-    - [9. T5 also rescales the decoder output for tied word embedding in the language model head](#9-t5-also-rescales-the-decoder-output-for-tied-word-embedding-in-the-language-model-head)
+This project is supported by Cloud TPUs from Google's [TPU Research Cloud](https://sites.research.google/trc/about/) (TRC).
+
+This project is inspired by [ayaka/bart-base-jax](https://github.com/ayaka14732/bart-base-jax/), while the code for this project is entirely written by myself.
+
+- [Setup Instructions](#setup-instructions)
+- [Usage examples](#usage-examples)
+- [Discoveries](#discoveries)
+- [Analysis](#analysis)
+  - [1. JAX precision](#1-jax-precision)
+  - [2. Layer normalisation](#2-layer-normalisation)
+  - [3. Dropout](#3-dropout)
+  - [4. Scaling QK matrices](#4-scaling-qk-matrices)
+  - [5. Relative Attention Bias / Position embeddings](#5-relative-attention-bias--position-embeddings)
+  - [6. Layer norm in T5 does not subtract mean](#6-layer-norm-in-t5-does-not-subtract-mean)
+  - [7. T5 employs a final layer norm on the output of the encoder and decoder](#7-t5-employs-a-final-layer-norm-on-the-output-of-the-encoder-and-decoder)
+  - [8. T5 uses tied word embeddings](#8-t5-uses-tied-word-embeddings)
+  - [9. T5 also rescales the decoder output for tied word embedding in the language model head](#9-t5-also-rescales-the-decoder-output-for-tied-word-embedding-in-the-language-model-head)
+- [T5 Jax Implementation Results](#t5-jax-implementation-results)
+  - [Input and Output](#input-and-output)
+  - [Time taken](#time-taken)
+  - [Conclusion](#conclusion)
+- [Fine-tuning](#fine-tuning)
+  - [Dataset](#dataset)
   - [Results](#results)
-    - [Input and Output](#input-and-output)
-    - [Time taken](#time-taken)
-    - [Conclusion](#conclusion)
 
 ## Setup Instructions
 
@@ -33,7 +40,7 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
    pip install -r requirements.txt
    ```
 
-## Examples
+## Usage examples
 
 1. Tokenize inputs
 
@@ -48,19 +55,27 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
    input_ids = inputs["input_ids"]
    ```
 
-2. Encoder
+2. Initialize model parameters
+
+   ```python
+   from utils.params_utils import init_params_pretrained
+
+   params = init_params_pretrained()
+   ```
+
+3. Encoder
 
    ```python
    from model.transformer_encoder import fwd_transformer_encoder
 
    encoder_output = fwd_transformer_encoder(
-      encoder_params=model.params["encoder"],
-      embedding_params=model.params["shared"],
+      encoder_params=params["encoder"],
+      embedding_params=params["shared"],
       input_ids=input_ids,
    )
    ```
 
-3. Decoder
+4. Decoder
 
    ```python
    from model.transformer_decoder import fwd_transformer_decoder
@@ -71,26 +86,35 @@ This project is a JAX implementation of the [T5](https://arxiv.org/pdf/1910.1068
    )
 
    decoder_output = fwd_transformer_decoder(
-      decoder_params=model.params["decoder"],
-      embedding_params=model.params["shared"],
+      decoder_params=params["decoder"],
+      embedding_params=params["shared"],
       decoder_input_ids=decoder_input_ids,
       encoder_output=encoder_output,
    )
    ```
 
-4. Generate
+5. Generate
 
    ```python
    from model.t5_generate import fwd_t5_generate
+   from config import config
 
    sequences = fwd_t5_generate(
-      model.params,
+      params,
       encoder_input_ids=input_ids,
-      eos_token_id=model.config.eos_token_id,
-      decoder_start_token_id=model.config.decoder_start_token_id,
+      eos_token_id=config.EOS_TOKEN_ID,
+      decoder_start_token_id=config.DECODER_START_TOKEN_ID,
    )
    output = tokenizer.batch_decode(sequences, skip_special_tokens=True)
    ```
+
+## Discoveries
+
+I discovered an issue in the Hugging Face transformers FlaxT5. Their hidden states output were not consistent with my outputs.
+
+I observed that my encoder and decoder block `11` `hidden state` does not align with their block `11` `hidden_state` even though my `hidden states` from block `0` to `10` aligns with the their `hidden states` from block `0` to `10`. Additionally, my `final hidden state` (after applying the layer norm) also aligns with their `final hidden state` after the layer norm.
+
+I then raised an [issue](https://github.com/huggingface/transformers/issues/23960) and made a [PR](https://github.com/huggingface/transformers/pull/24027) to fix this issue.
 
 ## Analysis
 
@@ -243,7 +267,7 @@ Where:
 - $W_e$ is the input embeddings used for tie word embeddings.
 - $\mathrm{lm\_head}$ is the input embeddings used for tie word embeddings.
 
-## Results
+## T5 Jax Implementation Results
 
 ### Input and Output
 
@@ -258,12 +282,27 @@ Where:
 
 The inputs above are fed into the Hugging Face transformers model and my own model. Generation was repeated 100 times and here is the total time taken:
 
-| Hugging Face | Mine   | Speed Improvement |
-| ------------ | ------ | ----------------- |
-| 190.63s      | 64.36s | 66.24% faster     |
+| Device | Hugging Face | Mine   | Speed Improvement |
+| ------ | ------------ | ------ | ----------------- |
+| GPU    | 190.63s      | 64.36s | 66.24% faster     |
+| TPU    | 466.59s      | 42.31s | 90.93% faster     |
 
 ### Conclusion
 
 In a direct comparison, my implementation achieves comparable results to Hugging Face's implementation, while also demonstrating superior performance in terms of speed.
 Both implementations produced identical translations, acceptability scores, and summarization outputs in the provided examples.
-However, my implementation outperforms Hugging Face's implementation, completing the tasks approximately 18.57% faster.
+However, my implementation outperforms Hugging Face's implementation, completing the tasks approximately 90.93% faster on TPU and 66.24% faster on GPU.
+
+## Fine-tuning
+
+Upon reading the original T5 paper, I discovered that it primarily focused on translating English to German, French, and Romanian. This sparked my curiosity about whether the model could also handle translating from French to English. To test this, I utilized the pre-trained model and applied a task prefix of "translate French to English: ". Unfortunately, the model proved incapable of performing the desired translation. Determined to overcome this limitation, I embarked on the journey of fine-tuning my own model specifically tailored for the task of French to English translation.
+
+> For more in-depth information regarding my fine-tuning process, you can visit the [GitHub branch](https://github.com/ztjhz/t5-jax/tree/train) or explore the [WandB runs](https://wandb.ai/jinghua/t5-jax-fr-en-finetune?workspace=user-jinghua). These resources provide additional insights into the details of my fine-tuning procedure.
+
+### Dataset
+
+To finetune my model, I utilized the [wmt-14](https://huggingface.co/datasets/wmt14) fr-en dataset, which consists of approximately 40 million data entries for the training set, and around 3,000 rows for the test and validation sets.
+
+### Results
+
+Coming soon...
