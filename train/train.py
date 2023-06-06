@@ -10,7 +10,7 @@ from model.t5 import fwd_t5
 from utils.loss_utils import cross_entropy_loss
 from utils.data_utils import dataset_generator
 from utils.random_utils import key2seed
-from utils.evaluation_utils import evaluate_model_with_sequential_generation
+from utils.evaluation_utils import evaluate_model_with_complete_decoding
 from config import config
 
 import optax
@@ -168,7 +168,7 @@ def main(params: dict):
                 wandb.log({"eval loss": total_eval_loss / total_eval_steps})
 
                 # compute bleu score
-                bleu = evaluate_model_with_sequential_generation(params)
+                bleu = evaluate_model_with_complete_decoding(params)
                 wandb.log({"bleu score": bleu})
 
             if step % save_interval == 0:
