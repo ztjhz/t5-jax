@@ -101,7 +101,7 @@ def main(params: dict):
             "device": "tpu",
             "params": "init_params_random_lm_head",
         },
-        notes="random init lm_head + scale decoder output"
+        notes="random init lm_head + no scale decoder output"
     )
 
     # set up optimizer
