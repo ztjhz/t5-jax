@@ -3,3 +3,6 @@ flax
 datasets
 wandb
 jax-smi
+evaluate
+sacrebleu
+
