@@ -86,18 +86,14 @@ def main(params: dict):
     eval_interval = 1024
     save_interval = 20480
     batch_size = 32
-    lr = 0.4
-    clipping = 0.1
-    eps = 0.001
+    lr = 5e-3
 
     wandb.init(
         project="t5-jax-fr-en-finetune",
         config={
             "learning_rate": lr,
-            "clipping": clipping,
-            "eps": eps,
             "batch size": batch_size,
-            "optimizer": "sgd-adapt-grad-clip",
+            "optimizer": "adafactor",
             "dataset": "wmt14-train",
             "epochs": n_epochs,
             "max_steps": max_steps,
@@ -108,10 +104,7 @@ def main(params: dict):
 
     # set up optimizer
     global optimizer
-    optimizer = optax.chain(
-        optax.adaptive_grad_clip(clipping, eps=eps),
-        optax.sgd(learning_rate=lr),
-    )
+    optimizer = optax.adafactor(learning_rate=lr)
     opt_state = optimizer.init(params)
 
     train_generator = dataset_generator(train=True)
