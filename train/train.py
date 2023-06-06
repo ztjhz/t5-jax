@@ -86,14 +86,14 @@ def main(params: dict):
     eval_interval = 1024
     save_interval = 20480
     batch_size = 32
-    lr = 5e-2
+    lr = 5e-3
 
     wandb.init(
         project="t5-jax-fr-en-finetune",
         config={
             "learning_rate": lr,
             "batch size": batch_size,
-            "optimizer": "adafactor",
+            "optimizer": "adam",
             "dataset": "wmt14-train",
             "epochs": n_epochs,
             "max_steps": max_steps,
@@ -104,7 +104,7 @@ def main(params: dict):
 
     # set up optimizer
     global optimizer
-    optimizer = optax.adafactor(learning_rate=lr)
+    optimizer = optax.adamw(learning_rate=lr)
     opt_state = optimizer.init(params)
 
     train_generator = dataset_generator(train=True)
