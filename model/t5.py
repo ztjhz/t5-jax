@@ -1,3 +1,5 @@
+from functools import partial
+import jax
 import jax.numpy as jnp
 from jax import random
 
@@ -8,6 +10,7 @@ from model.linear import fwd_linear
 from config import config
 
 
+@partial(jax.jit, static_argnames="tie_word_embeddings")
 def fwd_t5(
     params: dict,
     encoder_input_ids: jnp.ndarray,
