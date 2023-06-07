@@ -99,9 +99,9 @@ def main(params: dict):
             "epochs": n_epochs,
             "max_steps": max_steps,
             "device": "tpu",
-            "params": "init_params_random_lm_head",
+            "params": "init_params_embedding_lm_head",
         },
-        notes="random init lm_head + no scale decoder output"
+        notes="embedding lm_head + no scale decoder output"
     )
 
     # set up optimizer
@@ -177,8 +177,8 @@ def main(params: dict):
 
 if __name__ == "__main__":
     from jax_smi import initialise_tracking
-    from utils.params_utils import init_params_random_lm_head
+    from utils.params_utils import init_params_embedding_lm_head
 
     initialise_tracking()
-    params = init_params_random_lm_head()
+    params = init_params_embedding_lm_head()
     main(params)
