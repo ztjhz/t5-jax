@@ -87,7 +87,7 @@ def main(params: dict):
     eval_interval = 1024
     save_interval = 20480
     batch_size = 32
-    lr = 5e-3
+    lr = 5e-4
 
     wandb.init(
         project="t5-jax-fr-en-finetune",
