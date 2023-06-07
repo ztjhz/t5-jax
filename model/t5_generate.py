@@ -1,3 +1,4 @@
+from functools import partial
 import jax
 import jax.numpy as jnp
 
@@ -5,7 +6,7 @@ from model.t5 import fwd_t5
 from config import config
 
 
-@jax.jit
+@partial(jax.jit, static_argnames="tie_word_embeddings")
 def fwd_t5_generate(
     params: dict,
     encoder_input_ids: jnp.ndarray,
