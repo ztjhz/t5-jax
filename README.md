@@ -1,6 +1,8 @@
 # JAX Implementation of T5
 
-This project is an implementation of the [T5](https://arxiv.org/pdf/1910.10683.pdf) model using JAX. It takes a functional approach, leveraging the capabilities of JAX to achieve its goals. The primary objective of this project is twofold: to offer a versatile codebase for researching Transformer-based LLM architectures, and to show how Transformer-based language models can be implemented using JAX and trained on Google Cloud TPUs.
+[**[Research Report]**](https://github.com/ztjhz/t5-jax/blob/main/research-report.pdf) | [**[WandB Runs]**](https://wandb.ai/jinghua/t5-jax-fr-en-finetune?workspace=user-jinghua)
+
+This project is an enhanced implementation of the [T5](https://arxiv.org/pdf/1910.10683.pdf) model using JAX. By adopting a functional approach and harnessing the capabilities of JAX, this implementation strives for superior performance and compatibility with Google Cloud TPU. Beyond the technical advancements, this project's motivation stems from the desire to establish a cleaner T5 codebase and to serve as a valuable educational resource for both AI researchers and engineers, facilitating their understanding and exploration of Transformer-based LLM architectures.
 
 This project is supported by Cloud TPUs from Google's [TPU Research Cloud](https://sites.research.google/trc/about/) (TRC).
 
@@ -26,6 +28,8 @@ This project is inspired by [ayaka/bart-base-jax](https://github.com/ayaka14732/
 - [Fine-tuning](#fine-tuning)
   - [Dataset](#dataset)
   - [Results](#results)
+  - [BLEU Score](#bleu-score)
+  - [Task Performance](#task-performance)
 
 ## Setup Instructions
 
@@ -36,6 +40,7 @@ This project is inspired by [ayaka/bart-base-jax](https://github.com/ayaka14732/
    ```
 
 2. Then install requirements.txt:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -297,7 +302,7 @@ However, my implementation outperforms Hugging Face's implementation, completing
 
 Upon reading the original T5 paper, I discovered that it primarily focused on translating English to German, French, and Romanian. This sparked my curiosity about whether the model could also handle translating from French to English. To test this, I utilized the pre-trained model and applied a task prefix of "translate French to English: ". Unfortunately, the model proved incapable of performing the desired translation. Determined to overcome this limitation, I embarked on the journey of fine-tuning my own model specifically tailored for the task of French to English translation.
 
-> For more in-depth information regarding my fine-tuning process, you can visit the [GitHub branch](https://github.com/ztjhz/t5-jax/tree/train) or explore the [WandB runs](https://wandb.ai/jinghua/t5-jax-fr-en-finetune?workspace=user-jinghua). These resources provide additional insights into the details of my fine-tuning procedure.
+> For more in-depth information regarding my fine-tuning process, please read the [**research report**](https://github.com/ztjhz/t5-jax/blob/main/research-report.pdf) or visit the [GitHub branch](https://github.com/ztjhz/t5-jax/tree/train) or explore the [WandB runs](https://wandb.ai/jinghua/t5-jax-fr-en-finetune?workspace=user-jinghua). These resources provide additional insights into the details of my fine-tuning procedure.
 
 ### Dataset
 
@@ -305,4 +310,35 @@ To finetune my model, I utilized the [wmt-14](https://huggingface.co/datasets/wm
 
 ### Results
 
-Coming soon...
+> For a comprehensive understanding and detailed analysis of my findings, I invite you to explore my [**research report**](https://github.com/ztjhz/t5-jax/blob/main/research-report.pdf).
+
+Through rigorous experimentation with different factors such as initialising the language model head with embeddings, scaling the decoder output, task prefix, trying different Adafactor learning rates, and testing various optimisers, my results reveal that the optimal configuration comprises of using the Adafactor optimiser with a learning rate of 0.001, coupled with a scaled decoder output and embedding initialised `lm_head`.
+
+### BLEU Score
+
+| Optimiser                 | Steps  | Generation BLEU | One Pass BLEU |
+| ------------------------- | ------ | --------------- | ------------- |
+| Original (No fine-tuning) |        | 1.01            | 16.43         |
+| Adafactor, 0.001, scale   | 20,480 | 29.96           | 34.89         |
+|                           | 40,960 | 30.61           | 35.44         |
+|                           | 61,440 | 30.64           | 35.50         |
+|                           | 81,920 | **31.20**       | **36.12**     |
+
+Prior to fine-tuning the model specifically for French to English translation, it only managed to secure a modest BLEU score of **16.43**. After fine-tuning the model with the best configuration (Adafactor optimizer, learning rate of 0.001, scaled decoder output, and embedding lm_head), the fine-tuned model achieved a BLEU score to **31.20**, almost twice of the non-fine-tuned model.
+
+### Task Performance
+
+| Task                                  | Input                                                                                                                                                                                            | Output                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| English to German                     | "translate english to german: That is good"                                                                                                                                                      | "That is good news."                                                                                                                                                                                                                                                                                                                                                                                  |
+| Summarize                             | "summarize: In recent times, rapid advancements in technology have revolutionized various industries, enhancing efficiency, connectivity, and convenience for individuals and businesses alike." | "Rapid advances in technology have revolutionized various industries recently, increasing efficiency, connectivity, and convenience for individuals and businesses alike."                                                                                                                                                                                                                            |
+| Semantic Textual Similarity Benchmark | "stsb sentence1: The rhino grazed on the grass. sentence2: A rhino is grazing in a field."                                                                                                       | "sentence1: The rhinograzed on the grass. sentence2: A rhino is grazing in a field. sentence3: A rhino is grazing in a field. sentence4: A rhino is grazing in a field. sentence5: A rhino is grazing in a field. sentence6: A rhino is grazing in a field. sentence7: A rhino is grazing in a field. sentence8: A rhino is grazing in a field. sentence8: A rhino is grazing in a field. sentence8:" |
+| Corpus of Linguistic Acceptability    | "cola sentence: The course is jumping well."                                                                                                                                                     | "The course is jumping well. The course is jumping well."                                                                                                                                                                                                                                                                                                                                             |
+| French to English                     | "translate french to english: Une stratégie"                                                                                                                                                     | "A Strategy"                                                                                                                                                                                                                                                                                                                                                                                          |
+|                                       | "translate french to english: Cette année, je pense que c'est la bonne."                                                                                                                         | "This year I think it's nice."                                                                                                                                                                                                                                                                                                                                                                        |
+|                                       | "translate french to english: L'effet de la vitamine D sur le cancer n'est pas clairement établi non plus."                                                                                      | "Vitamin D's effect on cancer is not clear either."                                                                                                                                                                                                                                                                                                                                                   |
+|                                       | "translate french to english: Une boîte noire dans votre voiture?"                                                                                                                               | "Black box in your car?"                                                                                                                                                                                                                                                                                                                                                                              |
+|                                       | "translate french to english: Le sportif Jhonathan Florez a sauté jeudi d'un hélicoptère au-dessus de Bogota, la capitale colombienne."                                                          | "Jhonathan Florez crashed helicopter over Bogotá City Thursday night. He survived injuries sustained by teammates from teammates from Bogotá City."                                                                                                                                                                                                                                                   |
+|                                       | "translate french to english: j'aime manger du riz au poulet le matin."                                                                                                                          | "I like eating rice chicken morning."                                                                                                                                                                                                                                                                                                                                                                 |
+
+As seen from the table, the model perform quite well on French to English translation, but it fails to perform original tasks well. This demonstrates a striking example of catastrophic forgetting in machine learning, a predicament that affects not only the original tasks - including translation from English to German, summarization, STS-B, and CoLA - but also persists even in models fine-tuned for a small number of steps such as 20,480, 40,960, 61,440, and 81,920. Despite these careful, incremental adjustments, the models continue to exhibit catastrophic forgetting, underlining the challenge of maintaining the proficiency of AI models in their originally trained tasks while integrating new knowledge.
